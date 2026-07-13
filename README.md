@@ -1,13 +1,23 @@
-# Vanilla Sky Mestia Watcher
+# Vanilla Sky Route Watcher
 
-Watches [Vanilla Sky](https://ticket.vanillasky.ge)'s Natakhtari → Mestia flight
-booking data and alerts the moment dates open up for **10–15 August 2026**.
+Watches [Vanilla Sky](https://ticket.vanillasky.ge)'s flight booking data
+across every real Tbilisi-area route and alerts the moment dates open up
+from **8 August 2026 onward** (no end cap — "shotgun" mode: broad dates,
+broad destinations, to maximize the odds of catching a bookable seat).
 
 Vanilla Sky confirmed by email: *"Tickets for August are not yet available.
 Check our website during July for information. At the moment we don't know
 the exact release date."* Each flight only carries ~16 passengers, so this
 exists to catch the release the moment it happens instead of hoping to
 refresh the page at the right minute.
+
+Watched routes (all real Tbilisi-area departures, found by querying their
+own destination-lookup endpoint):
+- Natakhtari → Mestia
+- Natakhtari → Ambrolauri
+- Natakhtari → Batumi
+- Tbilisi → Batumi (exists in their system but currently shows no dates at
+  all — kept in case it activates; costs one extra lightweight request)
 
 ## How it works
 
@@ -16,18 +26,18 @@ refresh the page at the right minute.
    public read-only endpoint — `GET /custom/check-flight/{fromId}/{toId}` —
    which returns the bookable dates for that route as JSON.
 2. [`scripts/check.mjs`](scripts/check.mjs) calls that **exact same endpoint**
-   with the Natakhtari→Mestia route IDs (`7`→`6`), once per run.
+   once per watched route, per run.
 3. A [GitHub Actions workflow](.github/workflows/watch.yml) runs that script
    **every 15 minutes**, on GitHub's servers — no computer of yours needs to
    stay on.
-4. If any date from **2026-08-10 to 2026-08-15** appears, it immediately
-   sends you a Telegram message and/or email with the exact date(s) and a
-   direct link to book. If August opens with dates *outside* your window, it
-   sends a lower-priority heads-up too, since flights aren't daily and your
-   dates might shift.
+4. If any date from **2026-08-08 onward** appears on *any* watched route, it
+   immediately sends you a Telegram message and/or email naming the exact
+   route and date(s), with a direct link to book. If an earlier-August date
+   (before the 8th) opens instead, it sends a lower-priority heads-up too,
+   since that's still a strong signal the release has started.
 5. Current status is always visible at the [status dashboard](docs/index.html)
-   (`docs/data/state.json`, served via GitHub Pages), so you can also just
-   glance at a page instead of waiting for a notification.
+   (`docs/data/state.json`, served via GitHub Pages), broken down per route,
+   so you can also just glance at a page instead of waiting for a notification.
 
 ### Why this is safe / won't cause trouble
 
@@ -84,20 +94,23 @@ the default branch). You can also trigger it manually any time from the
 
 ### 6. Test the alert pipeline
 Run the workflow manually from the Actions tab with **"Send a fake alert"**
-checked. This fakes a match for `2026-08-10` and sends a real Telegram/email
-alert through your configured channels, without touching real data — good
-for confirming secrets are wired up correctly before it matters. (It only
-fires once per date per the dedup logic — clear `notifiedWindowDates` in
-`docs/data/state.json` to re-test.)
+checked. This fakes a match for `2026-08-08` on the Mestia route and sends a
+real Telegram/email alert through your configured channels, without
+touching real data — good for confirming secrets are wired up correctly
+before it matters. (It only fires once per route+date per the dedup logic —
+clear `notifiedWindowDates` in `docs/data/state.json` to re-test.)
 
-## Adjusting the target window or route
+## Adjusting the target window or routes
 
 Edit the top of `scripts/check.mjs`:
-- `WINDOW_START` / `WINDOW_END` — currently `2026-08-10` to `2026-08-15`.
-- `FROM_ID` / `TO_ID` — currently `7` (Natakhtari) → `6` (Mestia). Other IDs
-  seen on the site: `1` Tbilisi, `2` Ambrolauri, `4` Batumi, `5` Kutaisi.
-  (Tbilisi itself isn't a real departure point in their system — flights
-  leave from Natakhtari, with a free shuttle from central Tbilisi.)
+- `WINDOW_START` (env override: `WINDOW_START`) — currently `2026-08-08`.
+- `WINDOW_END` (env override: `WINDOW_END`) — currently unset (no upper
+  bound: any date from `WINDOW_START` onward counts as a match).
+- `ROUTES` — the list of `{ from, to, label }` route ID pairs being watched.
+  Other location IDs seen on the site: `1` Tbilisi, `2` Ambrolauri, `4`
+  Batumi, `5` Kutaisi, `6` Mestia, `7` Natakhtari. (Tbilisi itself isn't a
+  real departure point for most routes in their system — flights leave from
+  Natakhtari, with a free shuttle from central Tbilisi.)
 
 ## If the watcher ever breaks
 

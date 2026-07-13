@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Vanilla Sky · Mestia Watcher</title>
+<title>Vanilla Sky · Route Watcher</title>
 <style>
   :root {
     --bg: #f6f5f2;
@@ -54,7 +54,7 @@
     line-height: 1.5;
   }
   .wrap {
-    max-width: 720px;
+    max-width: 780px;
     margin: 0 auto;
     padding: 2.5rem 1.25rem 4rem;
   }
@@ -64,10 +64,7 @@
     text-transform: uppercase;
     letter-spacing: 0.06em;
   }
-  h1 {
-    font-size: 1.6rem;
-    margin: 0.25rem 0 0.25rem;
-  }
+  h1 { font-size: 1.6rem; margin: 0.25rem 0 0.25rem; }
   .sub { color: var(--muted); margin-bottom: 1.75rem; }
   .card {
     background: var(--card);
@@ -76,7 +73,7 @@
     padding: 1.5rem;
     margin-bottom: 1.25rem;
   }
-  .status-pill {
+  .overall-pill {
     display: inline-flex;
     align-items: center;
     gap: 0.5rem;
@@ -85,28 +82,19 @@
     font-weight: 600;
     font-size: 0.95rem;
   }
-  .status-pill.ok { background: var(--ok-bg); color: var(--accent); }
-  .status-pill.pending { background: var(--pending-bg); color: var(--pending-ink); }
-  .status-pill.error { background: var(--warn-bg); color: var(--warn); }
+  .overall-pill.ok { background: var(--ok-bg); color: var(--accent); }
+  .overall-pill.pending { background: var(--pending-bg); color: var(--pending-ink); }
+  .overall-pill.error { background: var(--warn-bg); color: var(--warn); }
   .big-status { font-size: 1.25rem; font-weight: 600; margin: 0.75rem 0 0.25rem; }
-  .dates {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.5rem;
-    margin-top: 0.75rem;
-  }
-  .date-chip {
-    border: 1px solid var(--line);
-    border-radius: 8px;
-    padding: 0.3rem 0.6rem;
-    font-size: 0.85rem;
-    font-variant-numeric: tabular-nums;
-  }
-  .date-chip.hit {
-    border-color: var(--accent);
-    background: var(--ok-bg);
-    color: var(--accent);
-    font-weight: 700;
+  a.btn {
+    display: inline-block;
+    background: var(--accent);
+    color: var(--accent-ink);
+    text-decoration: none;
+    font-weight: 600;
+    padding: 0.7rem 1.1rem;
+    border-radius: 10px;
+    margin-top: 1rem;
   }
   .meta-row {
     display: flex;
@@ -119,18 +107,44 @@
     padding-top: 1rem;
     border-top: 1px solid var(--line);
   }
-  a.btn {
-    display: inline-block;
-    background: var(--accent);
-    color: var(--accent-ink);
-    text-decoration: none;
-    font-weight: 600;
-    padding: 0.7rem 1.1rem;
-    border-radius: 10px;
-    margin-top: 1rem;
+  h2 { font-size: 1rem; margin: 0 0 0.25rem; }
+  .route-card { padding: 1.1rem 1.5rem; }
+  .route-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    flex-wrap: wrap;
   }
-  h2 { font-size: 1rem; margin: 0 0 0.5rem; }
-  .muted { color: var(--muted); font-size: 0.9rem; }
+  .route-pill {
+    font-size: 0.75rem;
+    font-weight: 700;
+    padding: 0.2rem 0.55rem;
+    border-radius: 999px;
+  }
+  .route-pill.ok { background: var(--ok-bg); color: var(--accent); }
+  .route-pill.pending { background: var(--pending-bg); color: var(--pending-ink); }
+  .route-pill.error { background: var(--warn-bg); color: var(--warn); }
+  .dates {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+    margin-top: 0.6rem;
+  }
+  .date-chip {
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 0.25rem 0.55rem;
+    font-size: 0.8rem;
+    font-variant-numeric: tabular-nums;
+  }
+  .date-chip.hit {
+    border-color: var(--accent);
+    background: var(--ok-bg);
+    color: var(--accent);
+    font-weight: 700;
+  }
+  .muted { color: var(--muted); font-size: 0.85rem; }
   code { background: var(--line); padding: 0.1rem 0.35rem; border-radius: 4px; font-size: 0.85em; }
   ul { padding-left: 1.2rem; }
   footer { color: var(--muted); font-size: 0.8rem; text-align: center; margin-top: 2rem; }
@@ -138,15 +152,14 @@
 </head>
 <body>
 <div class="wrap">
-  <div class="eyebrow">Automated availability watcher</div>
-  <h1>Tbilisi (Natakhtari) → Mestia</h1>
-  <div class="sub">Checks Vanilla Sky's own booking data every 15 minutes for your target window.</div>
+  <div class="eyebrow">Automated availability watcher — shotgun mode</div>
+  <h1>Tbilisi area → Mestia / Ambrolauri / Batumi</h1>
+  <div class="sub">Checks Vanilla Sky's own booking data every 15 minutes across all reachable routes, for any date from your target start onward.</div>
 
   <div class="card" id="status-card">
-    <span class="status-pill pending" id="pill">Loading…</span>
+    <span class="overall-pill pending" id="pill">Loading…</span>
     <div class="big-status" id="headline">Checking status…</div>
     <div class="muted" id="subline"></div>
-    <div class="dates" id="matched-dates"></div>
     <a class="btn" id="book-link" href="https://ticket.vanillasky.ge/en/tickets" target="_blank" rel="noopener">Open booking page →</a>
     <div class="meta-row">
       <span id="last-checked">Last checked: —</span>
@@ -154,11 +167,7 @@
     </div>
   </div>
 
-  <div class="card">
-    <h2>Currently bookable dates on their site (raw data)</h2>
-    <div class="muted" id="raw-note">—</div>
-    <div class="dates" id="raw-dates"></div>
-  </div>
+  <div id="routes"></div>
 
   <div class="card">
     <h2>Backup: contact Vanilla Sky directly</h2>
@@ -178,11 +187,9 @@ async function load() {
   const pill = document.getElementById('pill');
   const headline = document.getElementById('headline');
   const subline = document.getElementById('subline');
-  const matchedEl = document.getElementById('matched-dates');
-  const rawEl = document.getElementById('raw-dates');
-  const rawNote = document.getElementById('raw-note');
   const lastChecked = document.getElementById('last-checked');
   const windowEl = document.getElementById('window');
+  const routesEl = document.getElementById('routes');
 
   let state;
   try {
@@ -191,49 +198,69 @@ async function load() {
   } catch (e) {
     headline.textContent = 'Could not load status data.';
     pill.textContent = 'Error';
-    pill.className = 'status-pill error';
+    pill.className = 'overall-pill error';
     return;
   }
 
-  windowEl.textContent = 'Window: ' + state.targetWindow.start + ' to ' + state.targetWindow.end;
+  const windowLabel = state.targetWindow.start + (state.targetWindow.end ? ' to ' + state.targetWindow.end : ' onward (no end date)');
+  windowEl.textContent = 'Window: ' + windowLabel;
   lastChecked.textContent = 'Last checked: ' + (state.generatedAt ? new Date(state.generatedAt).toLocaleString() : 'not yet run');
 
   if (state.status === 'released_in_window') {
     pill.textContent = 'AVAILABLE';
-    pill.className = 'status-pill ok';
-    headline.textContent = 'Dates are open in your window — book now!';
-    subline.textContent = 'Only 16 seats per flight. Go.';
+    pill.className = 'overall-pill ok';
+    headline.textContent = 'Dates are open on at least one route — book now!';
+    subline.textContent = 'Only ~16 seats per flight. Go.';
   } else if (state.status === 'error') {
     pill.textContent = 'Watcher error';
-    pill.className = 'status-pill error';
-    headline.textContent = 'Last check failed';
-    subline.textContent = state.error || 'Unknown error — will retry automatically.';
+    pill.className = 'overall-pill error';
+    headline.textContent = 'Last check failed on every route';
+    subline.textContent = 'Will retry automatically every 15 minutes.';
   } else {
     pill.textContent = 'Not yet released';
-    pill.className = 'status-pill pending';
-    headline.textContent = 'No dates in your window yet';
+    pill.className = 'overall-pill pending';
+    headline.textContent = 'No dates in window yet, on any watched route';
     subline.textContent = 'Watching quietly in the background — you\'ll get a Telegram/email alert the moment this changes.';
   }
 
-  (state.matchedInWindow || []).forEach((d) => {
-    const chip = document.createElement('span');
-    chip.className = 'date-chip hit';
-    chip.textContent = d;
-    matchedEl.appendChild(chip);
-  });
+  (state.routes || []).forEach((r) => {
+    const card = document.createElement('div');
+    card.className = 'card route-card';
 
-  const raw = [...new Set([...(state.availableDatesFrom || []), ...(state.availableDatesTo || [])])].sort();
-  if (raw.length === 0) {
-    rawNote.textContent = 'No dates returned yet.';
-  } else {
-    rawNote.textContent = raw.length + ' bookable date(s) currently on the site (any route month):';
-    raw.forEach((d) => {
-      const chip = document.createElement('span');
-      chip.className = 'date-chip' + (d >= state.targetWindow.start && d <= state.targetWindow.end ? ' hit' : '');
-      chip.textContent = d;
-      rawEl.appendChild(chip);
-    });
-  }
+    const status = r.error ? 'error' : r.matchedInWindow.length > 0 ? 'ok' : 'pending';
+    const statusLabel = r.error ? 'Error' : r.matchedInWindow.length > 0 ? 'Available' : 'Not yet';
+
+    const head = document.createElement('div');
+    head.className = 'route-head';
+    head.innerHTML = '<strong>' + r.label + '</strong><span class="route-pill ' + status + '">' + statusLabel + '</span>';
+    card.appendChild(head);
+
+    if (r.error) {
+      const err = document.createElement('div');
+      err.className = 'muted';
+      err.textContent = r.error;
+      card.appendChild(err);
+    } else {
+      const raw = [...new Set([...(r.availableDatesFrom || []), ...(r.availableDatesTo || [])])].sort();
+      const note = document.createElement('div');
+      note.className = 'muted';
+      note.textContent = raw.length ? raw.length + ' bookable date(s) currently on the site:' : 'No bookable dates returned yet.';
+      card.appendChild(note);
+
+      const chips = document.createElement('div');
+      chips.className = 'dates';
+      raw.forEach((d) => {
+        const chip = document.createElement('span');
+        const isHit = d >= state.targetWindow.start && (!state.targetWindow.end || d <= state.targetWindow.end);
+        chip.className = 'date-chip' + (isHit ? ' hit' : '');
+        chip.textContent = d;
+        chips.appendChild(chip);
+      });
+      card.appendChild(chips);
+    }
+
+    routesEl.appendChild(card);
+  });
 }
 load();
 </script>

@@ -1,51 +1,71 @@
 #!/usr/bin/env node
-// Watches Vanilla Sky's public booking-widget endpoint for Natakhtari -> Mestia
-// availability and alerts the moment dates in the target window appear.
+// Watches Vanilla Sky's public booking-widget endpoint across several
+// Tbilisi-area routes and alerts the moment dates from the target start
+// date onward appear on ANY of them ("shotgun" mode: broad dates, broad
+// destinations, to maximize the odds of catching a bookable seat).
 //
 // This calls the exact same JSON endpoint the site's own booking page calls
 // in the browser (see themes/contrib/sky/js/global.js: `$.get('/custom/check-flight/...')`).
-// It is a single lightweight read-only GET request, run at most every 15
-// minutes by the GitHub Actions schedule - the same traffic pattern as a
+// It is one lightweight read-only GET request per route, run at most every
+// 15 minutes by the GitHub Actions schedule - the same traffic pattern as a
 // person loading the page and picking a route, just automated.
 
 import { readFile, writeFile, mkdir } from 'node:fs/promises';
 import path from 'node:path';
 
 const SITE = 'https://ticket.vanillasky.ge';
-const FROM_ID = 7; // Natakhtari
-const TO_ID = 6; // Mestia
-const WINDOW_START = process.env.WINDOW_START || '2026-08-10';
-const WINDOW_END = process.env.WINDOW_END || '2026-08-15';
+
+// All real Tbilisi-area departures found via /custom/check-dest/<id>.
+// Location IDs: 1 Tbilisi, 2 Ambrolauri, 4 Batumi, 5 Kutaisi, 6 Mestia, 7 Natakhtari.
+// Flights physically leave from Natakhtari (free shuttle from central Tbilisi).
+// Tbilisi->Batumi exists as a route in their system but currently returns no
+// dates at all - kept in the list in case it activates; costs one extra
+// lightweight request per run.
+const ROUTES = [
+  { from: 7, to: 6, label: 'Natakhtari -> Mestia' },
+  { from: 7, to: 2, label: 'Natakhtari -> Ambrolauri' },
+  { from: 7, to: 4, label: 'Natakhtari -> Batumi' },
+  { from: 1, to: 4, label: 'Tbilisi -> Batumi' },
+];
+
+const WINDOW_START = process.env.WINDOW_START || '2026-08-08';
+// No upper bound by default: any date from WINDOW_START onward counts.
+const WINDOW_END = process.env.WINDOW_END || null;
 const STATE_PATH = path.join(process.cwd(), 'docs', 'data', 'state.json');
 const HEARTBEAT_COMMIT_HOURS = 6;
 
 const USER_AGENT =
-  'VanillaSkyMestiaWatcher/1.0 (personal, non-commercial availability checker; runs every 15 min)';
+  'VanillaSkyRouteWatcher/1.0 (personal, non-commercial availability checker; runs every 15 min)';
 
 function inWindow(dateStr) {
-  return dateStr >= WINDOW_START && dateStr <= WINDOW_END;
+  return dateStr >= WINDOW_START && (!WINDOW_END || dateStr <= WINDOW_END);
 }
 
-function isAugust2026(dateStr) {
-  return dateStr.startsWith('2026-08');
+function isEarlyAugustBeforeWindow(dateStr) {
+  return dateStr.startsWith('2026-08') && dateStr < WINDOW_START;
+}
+
+function routeKey(route) {
+  return `${route.from}-${route.to}`;
 }
 
 async function loadState() {
   try {
     const raw = await readFile(STATE_PATH, 'utf8');
-    return JSON.parse(raw);
-  } catch {
+    const parsed = JSON.parse(raw);
     return {
-      notifiedWindowDates: [],
-      notifiedAugustOpen: false,
-      consecutiveFailures: 0,
-      lastCommittedAt: null,
+      notifiedWindowDates: parsed.notifiedWindowDates || {},
+      notifiedEarlyAugust: parsed.notifiedEarlyAugust || {},
+      consecutiveFailures: parsed.consecutiveFailures || 0,
+      lastCommittedAt: parsed.lastCommittedAt || null,
     };
+  } catch {
+    return { notifiedWindowDates: {}, notifiedEarlyAugust: {}, consecutiveFailures: 0, lastCommittedAt: null };
   }
 }
 
-async function fetchAvailability() {
-  const url = `${SITE}/custom/check-flight/${FROM_ID}/${TO_ID}`;
+async function fetchAvailability(route) {
+  const url = `${SITE}/custom/check-flight/${route.from}/${route.to}`;
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 15000);
   try {
@@ -89,12 +109,7 @@ async function sendEmail(subject, text) {
     secure: Number(SMTP_PORT || 465) === 465,
     auth: { user: SMTP_USER, pass: SMTP_PASS },
   });
-  await transport.sendMail({
-    from: SMTP_USER,
-    to: ALERT_EMAIL_TO,
-    subject,
-    text,
-  });
+  await transport.sendMail({ from: SMTP_USER, to: ALERT_EMAIL_TO, subject, text });
   return { sent: true };
 }
 
@@ -103,78 +118,110 @@ async function notifyAll(subject, text) {
   return results.map((r) => (r.status === 'fulfilled' ? r.value : { sent: false, reason: String(r.reason) }));
 }
 
-function summarize(state, data, matched, newMatches, error) {
+async function checkRoute(route, dryRunAlert) {
+  let data = null;
+  let error = null;
+  try {
+    data = dryRunAlert && route === ROUTES[0] ? { from: [WINDOW_START], to: [WINDOW_START] } : await fetchAvailability(route);
+  } catch (e) {
+    error = e;
+  }
+  const allDates = data ? [...new Set([...data.from, ...data.to])].sort() : [];
+  const matched = allDates.filter(inWindow);
+  const earlyAugust = allDates.filter(isEarlyAugustBeforeWindow);
   return {
-    generatedAt: new Date().toISOString(),
-    route: { from: 'Natakhtari', to: 'Mestia', fromId: FROM_ID, toId: TO_ID },
-    targetWindow: { start: WINDOW_START, end: WINDOW_END },
-    status: error ? 'error' : matched.length > 0 ? 'released_in_window' : 'not_yet',
-    error: error ? String(error.message || error) : null,
-    availableDatesFrom: data ? data.from : state.lastAvailableDatesFrom || [],
-    availableDatesTo: data ? data.to : state.lastAvailableDatesTo || [],
-    matchedInWindow: matched,
-    newlyNotified: newMatches,
-    consecutiveFailures: error ? (state.consecutiveFailures || 0) + 1 : 0,
-    checkUrl: `${SITE}/en/tickets`,
+    route,
+    error,
+    availableDatesFrom: data ? data.from : null,
+    availableDatesTo: data ? data.to : null,
+    matched,
+    earlyAugust,
   };
 }
 
 async function main() {
   const dryRunAlert = process.env.TEST_ALERT === 'true';
   const state = await loadState();
-  let data = null;
-  let error = null;
 
-  try {
-    data = dryRunAlert
-      ? { from: [WINDOW_START], to: [WINDOW_START] }
-      : await fetchAvailability();
-  } catch (e) {
-    error = e;
+  const results = [];
+  for (const route of ROUTES) {
+    results.push(await checkRoute(route, dryRunAlert));
   }
 
-  const allDates = data ? [...new Set([...data.from, ...data.to])].sort() : [];
-  const matched = allDates.filter(inWindow);
-  const anyAugust = allDates.filter(isAugust2026);
+  const allFailed = results.every((r) => r.error);
+  const anySucceeded = results.some((r) => !r.error);
 
-  const previouslyNotified = new Set(state.notifiedWindowDates || []);
-  const newMatches = matched.filter((d) => !previouslyNotified.has(d));
-
-  if (!error && newMatches.length > 0) {
-    const msg =
-      `*Vanilla Sky - Mestia flight available!*\n\n` +
-      `Date(s) in your window (${WINDOW_START} to ${WINDOW_END}) just appeared:\n` +
-      newMatches.map((d) => `- *${d}*`).join('\n') +
-      `\n\nBook now: ${SITE}/en/tickets\n` +
-      `Backup contact: (+995) 032 242 84 28 / info@vanillasky.ge\n\n` +
-      `Only 16 seats per flight - go now.`;
-    await notifyAll('Vanilla Sky: Mestia dates open!', msg);
-    state.notifiedWindowDates = [...previouslyNotified, ...newMatches];
-  } else if (!error && anyAugust.length > 0 && !state.notifiedAugustOpen) {
-    const msg =
-      `*Vanilla Sky - August calendar opened*\n\n` +
-      `No dates in your exact window (${WINDOW_START} to ${WINDOW_END}) yet, but August dates just appeared:\n` +
-      anyAugust.map((d) => `- ${d}`).join('\n') +
-      `\n\nCheck / adjust here: ${SITE}/en/tickets`;
-    await notifyAll('Vanilla Sky: August calendar opened', msg);
-    state.notifiedAugustOpen = true;
-  } else if (error) {
-    const failures = (state.consecutiveFailures || 0) + 1;
-    if (failures === 4) {
-      await notifyAll(
-        'Vanilla Sky watcher: having trouble',
-        `The watcher has failed to reach ${SITE} for the last ~hour (latest error: ${error.message}). ` +
-          `It will keep retrying automatically - this is just a heads up in case the site changed or is down.`
-      );
+  // Collect new matches across all routes for a single combined alert.
+  const newMatchLines = [];
+  const newEarlyAugustLines = [];
+  for (const r of results) {
+    if (r.error) continue;
+    const key = routeKey(r.route);
+    const alreadyNotified = new Set(state.notifiedWindowDates[key] || []);
+    const fresh = r.matched.filter((d) => !alreadyNotified.has(d));
+    if (fresh.length > 0) {
+      newMatchLines.push(`*${r.route.label}*: ${fresh.join(', ')}`);
+      state.notifiedWindowDates[key] = [...alreadyNotified, ...fresh];
+    }
+    if (r.earlyAugust.length > 0 && !state.notifiedEarlyAugust[key]) {
+      newEarlyAugustLines.push(`${r.route.label}: ${r.earlyAugust.join(', ')}`);
+      state.notifiedEarlyAugust[key] = true;
     }
   }
 
-  const summary = summarize(state, data, matched, newMatches, error);
-  state.consecutiveFailures = summary.consecutiveFailures;
-  if (data) {
-    state.lastAvailableDatesFrom = data.from;
-    state.lastAvailableDatesTo = data.to;
+  if (newMatchLines.length > 0) {
+    const msg =
+      `*Vanilla Sky - flight available!*\n\n` +
+      `Date(s) from ${WINDOW_START} onward just appeared:\n\n` +
+      newMatchLines.join('\n') +
+      `\n\nBook now: ${SITE}/en/tickets\n` +
+      `Backup contact: (+995) 032 242 84 28 / info@vanillasky.ge\n\n` +
+      `Only ~16 seats per flight - go now.`;
+    await notifyAll('Vanilla Sky: dates open!', msg);
+  } else if (newEarlyAugustLines.length > 0) {
+    const msg =
+      `*Vanilla Sky - early August calendar opened*\n\n` +
+      `Nothing from ${WINDOW_START} onward yet, but earlier August dates just appeared:\n\n` +
+      newEarlyAugustLines.join('\n') +
+      `\n\nCheck / adjust here: ${SITE}/en/tickets`;
+    await notifyAll('Vanilla Sky: early August calendar opened', msg);
   }
+
+  if (allFailed) {
+    const failures = (state.consecutiveFailures || 0) + 1;
+    state.consecutiveFailures = failures;
+    if (failures === 4) {
+      await notifyAll(
+        'Vanilla Sky watcher: having trouble',
+        `The watcher has failed to reach ${SITE} on every route for the last ~hour (latest error: ${results[0].error?.message}). ` +
+          `It will keep retrying automatically - this is just a heads up in case the site changed or is down.`
+      );
+    }
+  } else if (anySucceeded) {
+    state.consecutiveFailures = 0;
+  }
+
+  const summary = {
+    generatedAt: new Date().toISOString(),
+    targetWindow: { start: WINDOW_START, end: WINDOW_END },
+    status: allFailed ? 'error' : newMatchLines.length > 0 || results.some((r) => r.matched.length > 0) ? 'released_in_window' : 'not_yet',
+    consecutiveFailures: state.consecutiveFailures,
+    checkUrl: `${SITE}/en/tickets`,
+    routes: results.map((r) => ({
+      label: r.route.label,
+      fromId: r.route.from,
+      toId: r.route.to,
+      error: r.error ? String(r.error.message || r.error) : null,
+      availableDatesFrom: r.availableDatesFrom ?? state.lastRouteData?.[routeKey(r.route)]?.from ?? [],
+      availableDatesTo: r.availableDatesTo ?? state.lastRouteData?.[routeKey(r.route)]?.to ?? [],
+      matchedInWindow: r.matched,
+    })),
+    notifiedWindowDates: state.notifiedWindowDates,
+    notifiedEarlyAugust: state.notifiedEarlyAugust,
+    lastCommittedAt: state.lastCommittedAt,
+  };
+
+  console.log(JSON.stringify(summary, null, 2));
 
   const prevRaw = await readFile(STATE_PATH, 'utf8').catch(() => null);
   const meaningfulChange =
@@ -183,8 +230,8 @@ async function main() {
       try {
         const prev = JSON.parse(prevRaw);
         return (
-          JSON.stringify(prev.availableDatesFrom) !== JSON.stringify(summary.availableDatesFrom) ||
-          JSON.stringify(prev.availableDatesTo) !== JSON.stringify(summary.availableDatesTo) ||
+          JSON.stringify(prev.routes?.map((r) => ({ f: r.availableDatesFrom, t: r.availableDatesTo }))) !==
+            JSON.stringify(summary.routes.map((r) => ({ f: r.availableDatesFrom, t: r.availableDatesTo }))) ||
           prev.status !== summary.status
         );
       } catch {
@@ -197,21 +244,15 @@ async function main() {
     : Infinity;
   const shouldWrite = meaningfulChange || hoursSinceCommit >= HEARTBEAT_COMMIT_HOURS;
 
-  console.log(JSON.stringify(summary, null, 2));
-
   if (shouldWrite) {
-    state.lastCommittedAt = new Date().toISOString();
+    summary.lastCommittedAt = new Date().toISOString();
     await mkdir(path.dirname(STATE_PATH), { recursive: true });
-    await writeFile(
-      STATE_PATH,
-      JSON.stringify({ ...summary, notifiedWindowDates: state.notifiedWindowDates || [], notifiedAugustOpen: !!state.notifiedAugustOpen, consecutiveFailures: state.consecutiveFailures, lastCommittedAt: state.lastCommittedAt }, null, 2) + '\n'
-    );
+    await writeFile(STATE_PATH, JSON.stringify(summary, null, 2) + '\n');
     console.log('::notice::state.json updated (write=true)');
   } else {
     console.log('::notice::no meaningful change, skipping commit');
   }
 
-  // Signal to the workflow whether there's something to commit.
   process.env.GITHUB_OUTPUT &&
     (await writeFile(process.env.GITHUB_OUTPUT, `changed=${shouldWrite}\n`, { flag: 'a' }));
 }
