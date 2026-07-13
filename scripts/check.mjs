@@ -49,6 +49,16 @@ function routeKey(route) {
   return `${route.from}-${route.to}`;
 }
 
+const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+function spokenDate(dateStr) {
+  const [, m, d] = dateStr.split('-').map(Number);
+  return `${MONTHS[m - 1]} ${d}`;
+}
+
+function escapeXml(s) {
+  return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&apos;');
+}
+
 async function loadState() {
   try {
     const raw = await readFile(STATE_PATH, 'utf8');
@@ -113,8 +123,30 @@ async function sendEmail(subject, text) {
   return { sent: true };
 }
 
+async function sendPhoneCall(spokenMessage) {
+  const { TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, TWILIO_FROM_NUMBER, TWILIO_TO_NUMBER } = process.env;
+  if (!TWILIO_ACCOUNT_SID || !TWILIO_AUTH_TOKEN || !TWILIO_FROM_NUMBER || !TWILIO_TO_NUMBER) {
+    return { sent: false, reason: 'not configured' };
+  }
+  const say = escapeXml(spokenMessage);
+  const twiml = `<Response><Say voice="alice">${say}</Say><Pause length="1"/><Say voice="alice">${say}</Say></Response>`;
+  const auth = Buffer.from(`${TWILIO_ACCOUNT_SID}:${TWILIO_AUTH_TOKEN}`).toString('base64');
+  const res = await fetch(`https://api.twilio.com/2010-04-01/Accounts/${TWILIO_ACCOUNT_SID}/Calls.json`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded', Authorization: `Basic ${auth}` },
+    body: new URLSearchParams({ To: TWILIO_TO_NUMBER, From: TWILIO_FROM_NUMBER, Twiml: twiml }),
+  });
+  if (!res.ok) return { sent: false, reason: `HTTP ${res.status}: ${await res.text()}` };
+  return { sent: true };
+}
+
 async function notifyAll(subject, text) {
   const results = await Promise.allSettled([sendTelegram(text), sendEmail(subject, text)]);
+  return results.map((r) => (r.status === 'fulfilled' ? r.value : { sent: false, reason: String(r.reason) }));
+}
+
+async function notifyUrgent(subject, text, spokenMessage) {
+  const results = await Promise.allSettled([sendTelegram(text), sendEmail(subject, text), sendPhoneCall(spokenMessage)]);
   return results.map((r) => (r.status === 'fulfilled' ? r.value : { sent: false, reason: String(r.reason) }));
 }
 
@@ -153,6 +185,7 @@ async function main() {
 
   // Collect new matches across all routes for a single combined alert.
   const newMatchLines = [];
+  const newSpokenLines = [];
   const newEarlyAugustLines = [];
   for (const r of results) {
     if (r.error) continue;
@@ -161,6 +194,7 @@ async function main() {
     const fresh = r.matched.filter((d) => !alreadyNotified.has(d));
     if (fresh.length > 0) {
       newMatchLines.push(`*${r.route.label}*: ${fresh.join(', ')}`);
+      newSpokenLines.push(`${r.route.label.replace(' -> ', ' to ')} on ${fresh.map(spokenDate).join(', ')}`);
       state.notifiedWindowDates[key] = [...alreadyNotified, ...fresh];
     }
     if (r.earlyAugust.length > 0 && !state.notifiedEarlyAugust[key]) {
@@ -177,7 +211,10 @@ async function main() {
       `\n\nBook now: ${SITE}/en/tickets\n` +
       `Backup contact: (+995) 032 242 84 28 / info@vanillasky.ge\n\n` +
       `Only ~16 seats per flight - go now.`;
-    await notifyAll('Vanilla Sky: dates open!', msg);
+    const spokenMessage =
+      `Vanilla Sky alert. Tickets just opened for ${newSpokenLines.join('; ')}. ` +
+      `Book immediately at ticket dot vanilla sky dot G E. Only about 16 seats available.`;
+    await notifyUrgent('Vanilla Sky: dates open!', msg, spokenMessage);
   } else if (newEarlyAugustLines.length > 0) {
     const msg =
       `*Vanilla Sky - early August calendar opened*\n\n` +

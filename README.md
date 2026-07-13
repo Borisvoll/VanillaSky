@@ -31,10 +31,12 @@ own destination-lookup endpoint):
    **every 15 minutes**, on GitHub's servers — no computer of yours needs to
    stay on.
 4. If any date from **2026-08-08 onward** appears on *any* watched route, it
-   immediately sends you a Telegram message and/or email naming the exact
-   route and date(s), with a direct link to book. If an earlier-August date
-   (before the 8th) opens instead, it sends a lower-priority heads-up too,
-   since that's still a strong signal the release has started.
+   immediately sends you a Telegram message, email, **and a phone call that
+   reads out the route/date** (real ringing call — hard to miss even in
+   silent mode), naming the exact route and date(s), with a direct link to
+   book. If an earlier-August date (before the 8th) opens instead, it sends
+   a lower-priority Telegram/email heads-up only (no call), since that's
+   still a strong signal the release has started but isn't yet actionable.
 5. Current status is always visible at the [status dashboard](docs/index.html)
    (`docs/data/state.json`, served via GitHub Pages), broken down per route,
    so you can also just glance at a page instead of waiting for a notification.
@@ -83,22 +85,43 @@ the *sending* account that needs to support app passwords.
 
 If you skip this, Telegram-only is perfectly fine.
 
-### 4. Enable the dashboard (optional)
+### 4. Phone call alerts (optional, only fires for actionable in-window matches)
+Uses [Twilio](https://www.twilio.com/try-twilio) to place a real call that reads
+out the route and date(s). Free-trial credit comfortably covers this use case
+(a handful of calls at most) — trial accounts simply can't place further calls
+once credit runs out, they don't auto-charge you.
+
+1. Sign up at twilio.com (a card on file is required by Twilio for fraud
+   prevention, but nothing is charged while you're on trial credit).
+2. From the Twilio Console dashboard, copy your **Account SID** and **Auth Token**.
+3. Get a phone number: Twilio trial accounts include one free number
+   (Console → Phone Numbers → Manage → Buy a number, trial credit covers it).
+4. Verify your own phone number: Console → Phone Numbers → Verified Caller IDs
+   → add your number (trial accounts can only call verified numbers).
+5. Add these repository secrets:
+   - `TWILIO_ACCOUNT_SID`
+   - `TWILIO_AUTH_TOKEN`
+   - `TWILIO_FROM_NUMBER` (the Twilio number, e.g. `+1...`)
+   - `TWILIO_TO_NUMBER` (your real phone number, e.g. `+31...` or `+995...`)
+
+If you skip this, Telegram + email alerts still work fine on their own.
+
+### 5. Enable the dashboard (optional)
 **Settings → Pages → Source: Deploy from a branch → Branch: `main` → Folder: `/docs`**.
 Your dashboard will be live at `https://<you>.github.io/<repo>/`.
 
-### 5. Turn it on
-The workflow runs automatically once it's on `main` (schedules only fire from
-the default branch). You can also trigger it manually any time from the
-**Actions** tab → "Watch Vanilla Sky Mestia availability" → **Run workflow**.
+### 6. Turn it on
+The workflow runs automatically once it's on the default branch (schedules
+only fire from there). You can also trigger it manually any time from the
+**Actions** tab → "Watch Vanilla Sky availability" → **Run workflow**.
 
-### 6. Test the alert pipeline
+### 7. Test the alert pipeline
 Run the workflow manually from the Actions tab with **"Send a fake alert"**
 checked. This fakes a match for `2026-08-08` on the Mestia route and sends a
-real Telegram/email alert through your configured channels, without
-touching real data — good for confirming secrets are wired up correctly
-before it matters. (It only fires once per route+date per the dedup logic —
-clear `notifiedWindowDates` in `docs/data/state.json` to re-test.)
+real Telegram/email/phone-call alert through your configured channels,
+without touching real data — good for confirming secrets are wired up
+correctly before it matters. (It only fires once per route+date per the
+dedup logic — clear `notifiedWindowDates` in `docs/data/state.json` to re-test.)
 
 ## Adjusting the target window or routes
 
