@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-13T10:39:22.081Z",
+  "generatedAt": "2026-07-13T11:30:26.585Z",
   "targetWindow": {
     "start": "2026-08-08",
     "end": null
@@ -46,7 +46,22 @@
         "2026-07-30",
         "2026-07-31"
       ],
-      "matchedInWindow": []
+      "matchedInWindow": [],
+      "weekdayPattern": {
+        "neverFlies": [
+          "Sat"
+        ],
+        "alwaysFlies": [
+          "Sun",
+          "Mon",
+          "Tue",
+          "Wed",
+          "Thu",
+          "Fri"
+        ],
+        "observedFrom": "2026-07-14",
+        "observedTo": "2026-07-31"
+      }
     },
     {
       "label": "Natakhtari -> Ambrolauri",
@@ -73,7 +88,20 @@
         "2026-07-30",
         "2026-07-31"
       ],
-      "matchedInWindow": []
+      "matchedInWindow": [],
+      "weekdayPattern": {
+        "neverFlies": [
+          "Mon",
+          "Tue",
+          "Sat"
+        ],
+        "alwaysFlies": [
+          "Sun",
+          "Fri"
+        ],
+        "observedFrom": "2026-07-15",
+        "observedTo": "2026-07-31"
+      }
     },
     {
       "label": "Natakhtari -> Batumi",
@@ -111,7 +139,22 @@
         "2026-07-30",
         "2026-07-31"
       ],
-      "matchedInWindow": []
+      "matchedInWindow": [],
+      "weekdayPattern": {
+        "neverFlies": [
+          "Wed",
+          "Sat"
+        ],
+        "alwaysFlies": [
+          "Sun",
+          "Mon",
+          "Tue",
+          "Thu",
+          "Fri"
+        ],
+        "observedFrom": "2026-07-13",
+        "observedTo": "2026-07-31"
+      }
     },
     {
       "label": "Tbilisi -> Batumi",
@@ -120,10 +163,11 @@
       "error": null,
       "availableDatesFrom": [],
       "availableDatesTo": [],
-      "matchedInWindow": []
+      "matchedInWindow": [],
+      "weekdayPattern": null
     }
   ],
   "notifiedWindowDates": {},
   "notifiedEarlyAugust": {},
-  "lastCommittedAt": "2026-07-13T10:39:22.102Z"
+  "lastCommittedAt": "2026-07-13T11:30:26.586Z"
 }

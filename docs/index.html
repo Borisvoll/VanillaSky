@@ -257,6 +257,15 @@ async function load() {
         chips.appendChild(chip);
       });
       card.appendChild(chips);
+
+      if (r.weekdayPattern && r.weekdayPattern.neverFlies && r.weekdayPattern.neverFlies.length) {
+        const pattern = document.createElement('div');
+        pattern.className = 'muted';
+        pattern.style.marginTop = '0.6rem';
+        pattern.textContent = 'Never flies on: ' + r.weekdayPattern.neverFlies.join(', ') +
+          ' (based on schedule observed ' + r.weekdayPattern.observedFrom + ' to ' + r.weekdayPattern.observedTo + ')';
+        card.appendChild(pattern);
+      }
     }
 
     routesEl.appendChild(card);

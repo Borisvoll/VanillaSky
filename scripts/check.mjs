@@ -150,6 +150,31 @@ async function notifyUrgent(subject, text, spokenMessage) {
   return results.map((r) => (r.status === 'fulfilled' ? r.value : { sent: false, reason: String(r.reason) }));
 }
 
+const WEEKDAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+
+// Infers which weekdays this route reliably does/doesn't fly, from the
+// currently-known bookable dates. Purely informational (never used to
+// filter or suppress alerts - an actual open date always wins regardless
+// of what the pattern predicts).
+function computeWeekdayPattern(dates) {
+  if (dates.length < 3) return null;
+  const sorted = [...dates].sort();
+  const start = new Date(sorted[0] + 'T00:00:00Z');
+  const end = new Date(sorted[sorted.length - 1] + 'T00:00:00Z');
+  const dateSet = new Set(dates);
+  const present = Object.fromEntries(WEEKDAYS.map((d) => [d, 0]));
+  const total = Object.fromEntries(WEEKDAYS.map((d) => [d, 0]));
+  for (let d = new Date(start); d <= end; d.setUTCDate(d.getUTCDate() + 1)) {
+    const iso = d.toISOString().slice(0, 10);
+    const wd = WEEKDAYS[d.getUTCDay()];
+    total[wd]++;
+    if (dateSet.has(iso)) present[wd]++;
+  }
+  const neverFlies = WEEKDAYS.filter((d) => total[d] > 0 && present[d] === 0);
+  const alwaysFlies = WEEKDAYS.filter((d) => total[d] > 0 && present[d] === total[d]);
+  return { neverFlies, alwaysFlies, observedFrom: sorted[0], observedTo: sorted[sorted.length - 1] };
+}
+
 async function checkRoute(route, dryRunAlert) {
   let data = null;
   let error = null;
@@ -168,6 +193,7 @@ async function checkRoute(route, dryRunAlert) {
     availableDatesTo: data ? data.to : null,
     matched,
     earlyAugust,
+    weekdayPattern: data ? computeWeekdayPattern(allDates) : null,
   };
 }
 
@@ -252,6 +278,7 @@ async function main() {
       availableDatesFrom: r.availableDatesFrom ?? state.lastRouteData?.[routeKey(r.route)]?.from ?? [],
       availableDatesTo: r.availableDatesTo ?? state.lastRouteData?.[routeKey(r.route)]?.to ?? [],
       matchedInWindow: r.matched,
+      weekdayPattern: r.weekdayPattern,
     })),
     notifiedWindowDates: state.notifiedWindowDates,
     notifiedEarlyAugust: state.notifiedEarlyAugust,
