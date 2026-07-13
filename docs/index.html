@@ -1,0 +1,241 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Vanilla Sky · Mestia Watcher</title>
+<style>
+  :root {
+    --bg: #f6f5f2;
+    --card: #ffffff;
+    --ink: #1c1b19;
+    --muted: #6b6862;
+    --line: #e5e2db;
+    --accent: #2f6f4f;
+    --accent-ink: #ffffff;
+    --warn: #b5451b;
+    --warn-bg: #fdece3;
+    --ok-bg: #e9f5ee;
+    --pending-bg: #fff8e6;
+    --pending-ink: #8a6a12;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #16151a;
+      --card: #201f26;
+      --ink: #ece9e4;
+      --muted: #9a968d;
+      --line: #34323a;
+      --accent: #52b788;
+      --accent-ink: #0c1210;
+      --warn: #ff8b63;
+      --warn-bg: #3a1f14;
+      --ok-bg: #123021;
+      --pending-bg: #332b0f;
+      --pending-ink: #f0c95c;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #16151a; --card: #201f26; --ink: #ece9e4; --muted: #9a968d; --line: #34323a;
+    --accent: #52b788; --accent-ink: #0c1210; --warn: #ff8b63; --warn-bg: #3a1f14;
+    --ok-bg: #123021; --pending-bg: #332b0f; --pending-ink: #f0c95c;
+  }
+  :root[data-theme="light"] {
+    --bg: #f6f5f2; --card: #ffffff; --ink: #1c1b19; --muted: #6b6862; --line: #e5e2db;
+    --accent: #2f6f4f; --accent-ink: #ffffff; --warn: #b5451b; --warn-bg: #fdece3;
+    --ok-bg: #e9f5ee; --pending-bg: #fff8e6; --pending-ink: #8a6a12;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+    line-height: 1.5;
+  }
+  .wrap {
+    max-width: 720px;
+    margin: 0 auto;
+    padding: 2.5rem 1.25rem 4rem;
+  }
+  .eyebrow {
+    color: var(--muted);
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+  }
+  h1 {
+    font-size: 1.6rem;
+    margin: 0.25rem 0 0.25rem;
+  }
+  .sub { color: var(--muted); margin-bottom: 1.75rem; }
+  .card {
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    padding: 1.5rem;
+    margin-bottom: 1.25rem;
+  }
+  .status-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.35rem 0.9rem;
+    border-radius: 999px;
+    font-weight: 600;
+    font-size: 0.95rem;
+  }
+  .status-pill.ok { background: var(--ok-bg); color: var(--accent); }
+  .status-pill.pending { background: var(--pending-bg); color: var(--pending-ink); }
+  .status-pill.error { background: var(--warn-bg); color: var(--warn); }
+  .big-status { font-size: 1.25rem; font-weight: 600; margin: 0.75rem 0 0.25rem; }
+  .dates {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-top: 0.75rem;
+  }
+  .date-chip {
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 0.3rem 0.6rem;
+    font-size: 0.85rem;
+    font-variant-numeric: tabular-nums;
+  }
+  .date-chip.hit {
+    border-color: var(--accent);
+    background: var(--ok-bg);
+    color: var(--accent);
+    font-weight: 700;
+  }
+  .meta-row {
+    display: flex;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    color: var(--muted);
+    font-size: 0.85rem;
+    margin-top: 1rem;
+    padding-top: 1rem;
+    border-top: 1px solid var(--line);
+  }
+  a.btn {
+    display: inline-block;
+    background: var(--accent);
+    color: var(--accent-ink);
+    text-decoration: none;
+    font-weight: 600;
+    padding: 0.7rem 1.1rem;
+    border-radius: 10px;
+    margin-top: 1rem;
+  }
+  h2 { font-size: 1rem; margin: 0 0 0.5rem; }
+  .muted { color: var(--muted); font-size: 0.9rem; }
+  code { background: var(--line); padding: 0.1rem 0.35rem; border-radius: 4px; font-size: 0.85em; }
+  ul { padding-left: 1.2rem; }
+  footer { color: var(--muted); font-size: 0.8rem; text-align: center; margin-top: 2rem; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="eyebrow">Automated availability watcher</div>
+  <h1>Tbilisi (Natakhtari) → Mestia</h1>
+  <div class="sub">Checks Vanilla Sky's own booking data every 15 minutes for your target window.</div>
+
+  <div class="card" id="status-card">
+    <span class="status-pill pending" id="pill">Loading…</span>
+    <div class="big-status" id="headline">Checking status…</div>
+    <div class="muted" id="subline"></div>
+    <div class="dates" id="matched-dates"></div>
+    <a class="btn" id="book-link" href="https://ticket.vanillasky.ge/en/tickets" target="_blank" rel="noopener">Open booking page →</a>
+    <div class="meta-row">
+      <span id="last-checked">Last checked: —</span>
+      <span id="window">Window: —</span>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Currently bookable dates on their site (raw data)</h2>
+    <div class="muted" id="raw-note">—</div>
+    <div class="dates" id="raw-dates"></div>
+  </div>
+
+  <div class="card">
+    <h2>Backup: contact Vanilla Sky directly</h2>
+    <ul class="muted">
+      <li>Phone: (+995) 032 242 84 28</li>
+      <li>Email: info@vanillasky.ge</li>
+    </ul>
+  </div>
+
+  <footer>
+    Reads <code>data/state.json</code>, written by a scheduled GitHub Action. Not affiliated with Vanilla Sky.
+  </footer>
+</div>
+
+<script>
+async function load() {
+  const pill = document.getElementById('pill');
+  const headline = document.getElementById('headline');
+  const subline = document.getElementById('subline');
+  const matchedEl = document.getElementById('matched-dates');
+  const rawEl = document.getElementById('raw-dates');
+  const rawNote = document.getElementById('raw-note');
+  const lastChecked = document.getElementById('last-checked');
+  const windowEl = document.getElementById('window');
+
+  let state;
+  try {
+    const res = await fetch('./data/state.json?_=' + Date.now());
+    state = await res.json();
+  } catch (e) {
+    headline.textContent = 'Could not load status data.';
+    pill.textContent = 'Error';
+    pill.className = 'status-pill error';
+    return;
+  }
+
+  windowEl.textContent = 'Window: ' + state.targetWindow.start + ' to ' + state.targetWindow.end;
+  lastChecked.textContent = 'Last checked: ' + (state.generatedAt ? new Date(state.generatedAt).toLocaleString() : 'not yet run');
+
+  if (state.status === 'released_in_window') {
+    pill.textContent = 'AVAILABLE';
+    pill.className = 'status-pill ok';
+    headline.textContent = 'Dates are open in your window — book now!';
+    subline.textContent = 'Only 16 seats per flight. Go.';
+  } else if (state.status === 'error') {
+    pill.textContent = 'Watcher error';
+    pill.className = 'status-pill error';
+    headline.textContent = 'Last check failed';
+    subline.textContent = state.error || 'Unknown error — will retry automatically.';
+  } else {
+    pill.textContent = 'Not yet released';
+    pill.className = 'status-pill pending';
+    headline.textContent = 'No dates in your window yet';
+    subline.textContent = 'Watching quietly in the background — you\'ll get a Telegram/email alert the moment this changes.';
+  }
+
+  (state.matchedInWindow || []).forEach((d) => {
+    const chip = document.createElement('span');
+    chip.className = 'date-chip hit';
+    chip.textContent = d;
+    matchedEl.appendChild(chip);
+  });
+
+  const raw = [...new Set([...(state.availableDatesFrom || []), ...(state.availableDatesTo || [])])].sort();
+  if (raw.length === 0) {
+    rawNote.textContent = 'No dates returned yet.';
+  } else {
+    rawNote.textContent = raw.length + ' bookable date(s) currently on the site (any route month):';
+    raw.forEach((d) => {
+      const chip = document.createElement('span');
+      chip.className = 'date-chip' + (d >= state.targetWindow.start && d <= state.targetWindow.end ? ' hit' : '');
+      chip.textContent = d;
+      rawEl.appendChild(chip);
+    });
+  }
+}
+load();
+</script>
+</body>
+</html>

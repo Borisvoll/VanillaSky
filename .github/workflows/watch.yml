@@ -1,0 +1,57 @@
+name: Watch Vanilla Sky Mestia availability
+
+on:
+  schedule:
+    # Every 15 minutes. GitHub's scheduler is best-effort and can slip a few
+    # minutes under load, but this is as tight as it's sensible to poll.
+    - cron: '*/15 * * * *'
+  workflow_dispatch:
+    inputs:
+      test_alert:
+        description: 'Send a fake alert through Telegram/email to verify the notification pipeline (no real data)'
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+
+concurrency:
+  group: vanillasky-watch
+  cancel-in-progress: false
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - run: npm install --no-save nodemailer
+
+      - name: Run availability check
+        id: run
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          SMTP_HOST: ${{ secrets.SMTP_HOST }}
+          SMTP_PORT: ${{ secrets.SMTP_PORT }}
+          SMTP_USER: ${{ secrets.SMTP_USER }}
+          SMTP_PASS: ${{ secrets.SMTP_PASS }}
+          ALERT_EMAIL_TO: ${{ secrets.ALERT_EMAIL_TO }}
+          TEST_ALERT: ${{ github.event.inputs.test_alert || 'false' }}
+        run: npm run check
+
+      - name: Commit updated status (if changed)
+        run: |
+          if [ -n "$(git status --porcelain -- docs/data/state.json)" ]; then
+            git config user.name "vanillasky-watcher-bot"
+            git config user.email "actions@users.noreply.github.com"
+            git add docs/data/state.json
+            git commit -m "chore: update availability status [skip ci]"
+            git push
+          else
+            echo "No change to commit."
+          fi

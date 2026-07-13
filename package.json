@@ -1,0 +1,13 @@
+{
+  "name": "vanillasky-mestia-watcher",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Watches Vanilla Sky's Natakhtari->Mestia booking availability and alerts when dates open up.",
+  "type": "module",
+  "scripts": {
+    "check": "node scripts/check.mjs"
+  },
+  "dependencies": {
+    "nodemailer": "^6.9.14"
+  }
+}
