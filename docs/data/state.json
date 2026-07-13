@@ -1,10 +1,10 @@
 {
-  "generatedAt": "2026-07-13T10:37:19.296Z",
+  "generatedAt": "2026-07-13T10:39:22.081Z",
   "targetWindow": {
     "start": "2026-08-08",
     "end": null
   },
-  "status": "released_in_window",
+  "status": "not_yet",
   "consecutiveFailures": 0,
   "checkUrl": "https://ticket.vanillasky.ge/en/tickets",
   "routes": [
@@ -14,14 +14,39 @@
       "toId": 6,
       "error": null,
       "availableDatesFrom": [
-        "2026-08-08"
+        "2026-07-14",
+        "2026-07-15",
+        "2026-07-16",
+        "2026-07-17",
+        "2026-07-19",
+        "2026-07-20",
+        "2026-07-21",
+        "2026-07-22",
+        "2026-07-23",
+        "2026-07-24",
+        "2026-07-26",
+        "2026-07-28",
+        "2026-07-29",
+        "2026-07-30",
+        "2026-07-31"
       ],
       "availableDatesTo": [
-        "2026-08-08"
+        "2026-07-14",
+        "2026-07-15",
+        "2026-07-16",
+        "2026-07-17",
+        "2026-07-19",
+        "2026-07-21",
+        "2026-07-22",
+        "2026-07-23",
+        "2026-07-24",
+        "2026-07-26",
+        "2026-07-27",
+        "2026-07-28",
+        "2026-07-30",
+        "2026-07-31"
       ],
-      "matchedInWindow": [
-        "2026-08-08"
-      ]
+      "matchedInWindow": []
     },
     {
       "label": "Natakhtari -> Ambrolauri",
@@ -98,11 +123,7 @@
       "matchedInWindow": []
     }
   ],
-  "notifiedWindowDates": {
-    "7-6": [
-      "2026-08-08"
-    ]
-  },
+  "notifiedWindowDates": {},
   "notifiedEarlyAugust": {},
-  "lastCommittedAt": "2026-07-13T10:37:19.297Z"
+  "lastCommittedAt": "2026-07-13T10:39:22.102Z"
 }
