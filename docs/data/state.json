@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-20T07:51:02.617Z",
+  "generatedAt": "2026-07-20T10:39:28.869Z",
   "targetWindow": {
     "start": "2026-08-08",
     "end": null
@@ -14,7 +14,6 @@
       "toId": 6,
       "error": null,
       "availableDatesFrom": [
-        "2026-07-20",
         "2026-07-21",
         "2026-07-22",
         "2026-07-23",
@@ -51,7 +50,7 @@
           "Thu",
           "Fri"
         ],
-        "observedFrom": "2026-07-20",
+        "observedFrom": "2026-07-21",
         "observedTo": "2026-07-31"
       }
     },
@@ -106,7 +105,6 @@
         "2026-07-31"
       ],
       "availableDatesTo": [
-        "2026-07-20",
         "2026-07-21",
         "2026-07-23",
         "2026-07-24",
@@ -146,5 +144,5 @@
   ],
   "notifiedWindowDates": {},
   "notifiedEarlyAugust": {},
-  "lastCommittedAt": "2026-07-20T07:51:02.618Z"
+  "lastCommittedAt": "2026-07-20T10:39:28.872Z"
 }
