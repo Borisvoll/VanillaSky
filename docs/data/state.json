@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-25T17:39:00.544Z",
+  "generatedAt": "2026-07-25T23:40:42.365Z",
   "targetWindow": {
     "start": "2026-08-08",
     "end": null
@@ -123,5 +123,5 @@
   ],
   "notifiedWindowDates": {},
   "notifiedEarlyAugust": {},
-  "lastCommittedAt": "2026-07-25T17:39:00.545Z"
+  "lastCommittedAt": "2026-07-25T23:40:42.368Z"
 }
