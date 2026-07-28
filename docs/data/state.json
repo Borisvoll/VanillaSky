@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-28T10:02:02.940Z",
+  "generatedAt": "2026-07-28T12:10:06.164Z",
   "targetWindow": {
     "start": "2026-08-08",
     "end": null
@@ -57,7 +57,6 @@
       "toId": 4,
       "error": null,
       "availableDatesFrom": [
-        "2026-07-28",
         "2026-07-30",
         "2026-07-31"
       ],
@@ -66,18 +65,7 @@
         "2026-07-31"
       ],
       "matchedInWindow": [],
-      "weekdayPattern": {
-        "neverFlies": [
-          "Wed"
-        ],
-        "alwaysFlies": [
-          "Tue",
-          "Thu",
-          "Fri"
-        ],
-        "observedFrom": "2026-07-28",
-        "observedTo": "2026-07-31"
-      }
+      "weekdayPattern": null
     },
     {
       "label": "Tbilisi -> Batumi",
@@ -92,5 +80,5 @@
   ],
   "notifiedWindowDates": {},
   "notifiedEarlyAugust": {},
-  "lastCommittedAt": "2026-07-28T10:02:02.941Z"
+  "lastCommittedAt": "2026-07-28T12:10:06.166Z"
 }
