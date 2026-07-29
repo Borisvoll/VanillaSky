@@ -1,10 +1,10 @@
 name: Watch Vanilla Sky availability
 
 on:
-  schedule:
-    # Every 15 minutes. GitHub's scheduler is best-effort and can slip a few
-    # minutes under load, but this is as tight as it's sensible to poll.
-    - cron: '*/15 * * * *'
+  # Schedule disabled: August is fully released, so date-existence (this
+  # watcher's signal) no longer tells us anything useful — everything is sold
+  # out. The seat-watch.yml workflow now watches real seat availability for
+  # cancellations instead. Kept here for manual runs / history only.
   workflow_dispatch:
     inputs:
       test_alert:

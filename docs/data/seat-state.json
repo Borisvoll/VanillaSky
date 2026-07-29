@@ -1,0 +1,85 @@
+{
+  "generatedAt": "2026-07-29T15:32:26.932Z",
+  "watching": [
+    {
+      "label": "Natakhtari -> Mestia",
+      "dates": [
+        "2026-08-09",
+        "2026-08-10",
+        "2026-08-11",
+        "2026-08-12",
+        "2026-08-13",
+        "2026-08-14"
+      ]
+    },
+    {
+      "label": "Kutaisi -> Mestia",
+      "dates": [
+        "2026-08-10",
+        "2026-08-12"
+      ]
+    }
+  ],
+  "seats": [
+    {
+      "label": "Natakhtari -> Mestia",
+      "date": "2026-08-09",
+      "available": false,
+      "price": null,
+      "error": null
+    },
+    {
+      "label": "Natakhtari -> Mestia",
+      "date": "2026-08-10",
+      "available": false,
+      "price": null,
+      "error": null
+    },
+    {
+      "label": "Natakhtari -> Mestia",
+      "date": "2026-08-11",
+      "available": null,
+      "price": null,
+      "error": "This operation was aborted"
+    },
+    {
+      "label": "Natakhtari -> Mestia",
+      "date": "2026-08-12",
+      "available": null,
+      "price": null,
+      "error": "This operation was aborted"
+    },
+    {
+      "label": "Natakhtari -> Mestia",
+      "date": "2026-08-13",
+      "available": false,
+      "price": null,
+      "error": null
+    },
+    {
+      "label": "Natakhtari -> Mestia",
+      "date": "2026-08-14",
+      "available": false,
+      "price": null,
+      "error": null
+    },
+    {
+      "label": "Kutaisi -> Mestia",
+      "date": "2026-08-10",
+      "available": false,
+      "price": null,
+      "error": null
+    },
+    {
+      "label": "Kutaisi -> Mestia",
+      "date": "2026-08-12",
+      "available": false,
+      "price": null,
+      "error": null
+    }
+  ],
+  "availableNow": [],
+  "consecutiveFailures": 0,
+  "alerted": {},
+  "lastCommittedAt": "2026-07-29T15:32:26.947Z"
+}
