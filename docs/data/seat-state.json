@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-29T15:32:26.932Z",
+  "generatedAt": "2026-07-29T16:59:50.604Z",
   "watching": [
     {
       "label": "Natakhtari -> Mestia",
@@ -38,16 +38,16 @@
     {
       "label": "Natakhtari -> Mestia",
       "date": "2026-08-11",
-      "available": null,
+      "available": false,
       "price": null,
-      "error": "This operation was aborted"
+      "error": null
     },
     {
       "label": "Natakhtari -> Mestia",
       "date": "2026-08-12",
-      "available": null,
+      "available": false,
       "price": null,
-      "error": "This operation was aborted"
+      "error": null
     },
     {
       "label": "Natakhtari -> Mestia",
@@ -81,5 +81,5 @@
   "availableNow": [],
   "consecutiveFailures": 0,
   "alerted": {},
-  "lastCommittedAt": "2026-07-29T15:32:26.947Z"
+  "lastCommittedAt": "2026-07-29T16:59:50.605Z"
 }
