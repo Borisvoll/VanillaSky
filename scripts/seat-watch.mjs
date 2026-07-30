@@ -174,7 +174,9 @@ async function main() {
       `🔴 *SEAT AVAILABLE — cancellation!*\n\n` +
       `A seat just opened up:\n\n` +
       lines.join('\n') +
-      `\n\nBook NOW before it's gone: ${SITE}/en/tickets\n` +
+      `\n\n👉 Book NOW (open in *Safari*, not Arc — Arc's date picker breaks):\n` +
+      `${SITE}/en/tickets\n\n` +
+      `Pick the route + date above, 1 adult, search, book.\n` +
       `Backup: call (+995) 032 242 84 28.`;
     await sendTelegram(msg);
     const spokenList = freshlyAvailable.map((r) => `${r.w.label.replace(' -> ', ' to ')} on ${spoken(r.iso)}`).join('; ');
