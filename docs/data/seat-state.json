@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-04T02:46:34.902Z",
+  "generatedAt": "2026-09-04T12:17:07.711Z",
   "watching": [
     {
       "label": "Natakhtari -> Mestia",
@@ -66,9 +66,9 @@
     {
       "label": "Kutaisi -> Mestia",
       "date": "2026-08-10",
-      "available": false,
+      "available": null,
       "price": null,
-      "error": null
+      "error": "fetch failed"
     },
     {
       "label": "Kutaisi -> Mestia",
@@ -81,5 +81,5 @@
   "availableNow": [],
   "consecutiveFailures": 0,
   "alerted": {},
-  "lastCommittedAt": "2026-09-04T02:46:34.904Z"
+  "lastCommittedAt": "2026-09-04T12:17:07.712Z"
 }
